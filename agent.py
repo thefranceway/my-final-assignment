@@ -115,18 +115,33 @@ def refusal() -> ResearchAnswer:
     )
 
 
+def skill(doc_id: str) -> str:
+    """Guidance for the model. It goes in the system prompt, never in the question."""
+    return (
+        "How to fill in the JSON well:\n"
+        f'- The context comes from one document, "{doc_id}". When it answers the question, '
+        f'put "{doc_id}" in citations, set confidence to 0.8 or more and '
+        "needs_human_review to false.\n"
+        "- Keep the context's own wording for key terms. When it lists several items, "
+        "include every one.\n"
+        "- Use empty citations, confidence 0.0 and needs_human_review true only when your "
+        "answer is that you do not know."
+    )
+
+
 class TwoCalls:
     """The real model, held to the course budget: one call and one retry."""
 
-    def __init__(self, client: LLMClient) -> None:
+    def __init__(self, client: LLMClient, skill: str = "") -> None:
         self.client = client
+        self.skill = skill
         self.calls = 0
 
     def complete(self, system: str, user: str) -> str:
         self.calls += 1
         if self.calls > 2:
             return ""  # budget spent: an unreadable reply ends as a refusal
-        return self.client.complete(system=system, user=user)
+        return self.client.complete(system=f"{system}\n\n{self.skill}".strip(), user=user)
 
 
 class YourAgent:
@@ -172,7 +187,7 @@ class YourAgent:
             return AgentResult(answer=refusal(), trace=(TraceEvent("decision", why),))
 
         # 2. One model call, on that whole document, nothing cut off.
-        model = TwoCalls(self.client)
+        model = TwoCalls(self.client, skill(doc_id))
         context = [fit_paragraphs(document)]
         result = answer_question(to_model, context, model, max_tool_calls=3, top_k=20)
         answer, trace = result.answer, list(result.trace)
