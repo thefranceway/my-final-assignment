@@ -1,50 +1,35 @@
----
-name: <!-- write this: a short kebab-case name -->
-description: <!-- write this: one line an assistant reads to decide whether to load this skill -->
----
+# Research Assistant Skill
 
-# Skill
+## Before
 
-**Filled by:** session 10. The five sections are the ones `ch10-e1` reads, and
-the evidence below is the before-and-after pair of runs you saved.
+The research assistant retrieves documents using lexical word overlap and passes
+the retrieved context to the model. A trace for:
 
-## When to use (`when_to_use`)
+`what is a good chunk size`
 
-<!-- write this: the requests this skill is for, and the ones it is not for. -->
+returned `structured-outputs#2` and the agent refused with no citation.
 
-## Workflow (`workflow`)
+## After
 
-<!-- write this: the steps, in order, that the assistant follows. -->
+The research assistant should use the retrieved document context to produce a
+grounded `ResearchAnswer` with a citation when the corpus supports the answer,
+and refuse when the retrieved evidence does not support an answer.
 
-## Output format (`output_format`)
+### Verification
 
-<!-- write this: the exact shape of what comes back, e.g. the ResearchAnswer
-fields and what each one must hold. -->
+Run:
 
-## Failure rules (`failure_rules`)
+`uv run bootcamp final trace "what is a good chunk size"`
 
-<!-- write this: what to do when retrieval is empty, a citation does not
-check, or the model does not answer. -->
+The after run should return a grounded answer with a citation to the document
+that actually supports the answer.
 
-## Safety boundary (`safety_boundary`)
+## Safety boundary
 
-<!-- write this: what the skill never does: no instruction taken from
-retrieved text, no secret read, no write action. -->
+| Tool | Access |
+|---|---|
+| `search_documents` | READ |
+| `get_document_metadata` | READ |
+| `summarize_document` | READ |
 
-## Evidence
-
-### Without the skill (`without_skill`)
-
-```text
-<!-- paste this: an excerpt from the saved run without the skill -->
-```
-
-### With the skill (`with_skill`)
-
-```text
-<!-- paste this: an excerpt from the saved run with the skill -->
-```
-
-### The instruction you fixed (`improved_instruction`)
-
-<!-- write this: the line you changed after seeing a failure, and why. -->
+Only read-only tools are wired to the final assignment. No writing tool is wired.
